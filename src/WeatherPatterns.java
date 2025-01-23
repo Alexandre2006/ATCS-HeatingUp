@@ -1,3 +1,6 @@
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * The class WeatherPatterns finds the longest span of days in which
  * each day’s temperature is higher than on the previous day in that sequence.
@@ -8,43 +11,59 @@
 
 public class WeatherPatterns {
 
+    // Cache for memoization
+    private static int[] cache;
+
     /**
      * Longest Warming Trend
      * @return the longest run of days with increasing temperatures
      */
     public static int longestWarmingTrend(int[] temperatures) {
-        // Quick exit conditions
-        if (temperatures == null || temperatures.length == 0) {
-            return 0;
-        }
+        // Store adjacency list
+        List<List<Integer>> adjList = new ArrayList<>();
 
-        // Keep track of length of runs
-        int[] lengths = new int[temperatures.length];
+        // Initialize adjacency list
         for (int i = 0; i < temperatures.length; i++) {
-            lengths[i] = 1;
+            adjList.add(new ArrayList<>());
         }
 
-        int longestRun = 1;
-
-        // Loop through all temps (checking for an increasing temp)
-        for (int i = 1; i < temperatures.length; i++) {
-            // Find which (previous) temps the current temp is greater than
-            for (int j = 0; j < i; j++) {
-                if (temperatures[i] > temperatures[j]) {
-                    // Find the node the colder node with the longest run, and add 1 to the new higher temperature
-                    if (lengths[i] < lengths[j] + 1) {
-                        lengths[i] = lengths[j] + 1;
-                    }
+        // Map connections
+        for (int i = 0; i < temperatures.length; i++) {
+            for (int x = 0; x < i; x++) {
+                if (temperatures[i] > temperatures[x]) {
+                    adjList.get(i).add(x);
                 }
             }
+        }
 
-            // Update the longest run if any improvements have been made
-            if (lengths[i] > longestRun) {
-                longestRun = lengths[i];
+        // Initialize cache
+        cache = new int[temperatures.length];
+
+        // Return longest path
+        int currentMax = 0;
+        for (int i = 0; i < temperatures.length; i++) {
+            currentMax = Math.max(currentMax, longestPath(i, adjList));
+        }
+
+        return currentMax;
+    }
+
+    private static int longestPath(int i, List<List<Integer>> adjList) {
+        int maxLen = 0;
+
+        // Find connected nodes (and their lengths) to find max length
+        for (int x : adjList.get(i)) {
+            if (cache[x] != 0) {
+                maxLen = Math.max(maxLen, cache[x]);
+            } else {
+                maxLen = Math.max(maxLen, longestPath(x, adjList));
             }
         }
 
-        // Return the longest run
-        return longestRun;
+        // Save current node to cache
+        cache[i] = maxLen + 1;
+
+        // Return max length
+        return maxLen + 1;
     }
 }
